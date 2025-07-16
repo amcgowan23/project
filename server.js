@@ -20,6 +20,11 @@ app.listen(port, () => {
 const da = require("./data-access");
 //add statement that imports data-access.js
 app.get("/customers", async (req, res) => {
-const cust = await da.getCustomers();
-res.send(cust);
+     const [cust, err] = await da.getCustomers();
+     if(cust){
+         res.send(cust);
+     }else{
+         res.status(500);
+         res.send(err);
+     }   
 });
