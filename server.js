@@ -16,3 +16,10 @@ app.listen(port, () => {
 "test"; "echo \"Error: no test specified\" && exit 1",
 "start"; "node server.js"
 };
+
+const da = require("./data-access");
+//add statement that imports data-access.js
+app.get("/customers", async (req, res) => {
+const cust = await da.getCustomers();
+res.send(cust);
+});
