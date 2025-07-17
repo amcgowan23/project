@@ -23,5 +23,35 @@ async function getCustomers() {
          return [null, err.message];
      }
 }
+async function addCustomer(newCustomer) {
+    try {
+        const insertResult = await collection.insertOne(newCustomer);
+        // return array [status, id, errMessage]
+        return ["success", insertResult.insertedId, null];
+    } catch (err) {
+        console.log(err.message);
+        return ["fail", null, err.message];
+    }
+}
+
+
+async function resetCustomers() {
+    let data = [{ "id": 0, "name": "Mary Jackson", "email": "maryj@abc.com", "password": "maryj" },
+    { "id": 1, "name": "Karen Addams", "email": "karena@abc.com", "password": "karena" },
+    { "id": 2, "name": "Scott Ramsey", "email": "scottr@abc.com", "password": "scottr" }];
+
+    try {
+        await collection.deleteMany({});
+        await collection.insertMany(data);
+        const customers = await collection.find().toArray();
+        const message = "data was refreshed. There are now " + customers.length + " customer records!"
+        return [message, null];
+    } catch (err) {
+        console.log(err.message);
+        return [null, err.message];
+    }
+}
+
 dbStartup();
-module.exports = { getCustomers };
+module.exports = { getCustomers, resetCustomers, addCustomer };
+
