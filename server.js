@@ -88,3 +88,14 @@ app.put('/customers/:id', async (req, res) => {
         }
     }
 });
+app.delete("/customers/:id", async (req, res) => {
+    const id = req.params.id;
+    // return array [message, errMessage]
+    const [message, errMessage] = await da.deleteCustomerById(id);
+    if (message) {
+        res.send(message);
+    } else {
+        res.status(404);
+        res.send(errMessage);
+    }
+});
