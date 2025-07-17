@@ -8,7 +8,6 @@ const port = process.env.PORT || 4000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-
 // API key middleware
 function checkApiKey(req, res, next) {
     const apiKey = req.header('x-api-key');
@@ -18,10 +17,41 @@ function checkApiKey(req, res, next) {
     next();
 }
 
+// /customers/find is open to all
+app.get("/customers/find", async (req, res) => {
+    const allowedFields = ["id", "email", "password"];
+    const queryKeys = Object.keys(req.query);
+
+    if (queryKeys.length === 0) {
+        return res.status(400).json({ message: "query string is required" });
+    }
+    if (queryKeys.length > 1) {
+        return res.status(400).json({ message: "only a single name/value pair is supported" });
+    }
+    const field = queryKeys[0];
+    const value = req.query[field];
+    if (!allowedFields.includes(field)) {
+        return res.status(400).json({ message: "name must be one of the following (id, email, password)" });
+    }
+    let filter = {};
+    if (field === "id") {
+        filter.id = +value;
+    } else {
+        filter[field] = value;
+    }
+    const [customers, err] = await da.getCustomers();
+    if (err) {
+        return res.status(500).json({ error: err });
+    }
+    const matches = customers.filter(cust => cust[field] === filter[field]);
+    if (matches.length === 0) {
+        return res.status(404).json({ message: "no matching customer documents found" });
+    }
+    res.json(matches);
+});
+
 // Apply API key middleware to all routes below
 app.use(checkApiKey);
-
-// Remove the duplicate unprotected /customers endpoint
 
 // Get all customers
 app.get("/customers", async (req, res) => {
@@ -32,6 +62,7 @@ app.get("/customers", async (req, res) => {
         res.status(500).json({ error: err });
     }
 });
+
 // Reset customers
 app.get("/reset", async (req, res) => {
     const [result, err] = await da.resetCustomers();
@@ -98,7 +129,6 @@ app.delete("/customers/:id", async (req, res) => {
 // Start server after DB is ready
 async function startServer() {
     try {
-        // If using the improved data-access.js, dbStartup is called automatically and is safe to call again.
         await da.getCustomers(); // Ensures DB is ready
         app.listen(port, () => {
             console.log(`Server listening on port ${port}`);
