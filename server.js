@@ -8,6 +8,21 @@ const port = process.env.PORT || 4000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+// API key middleware
+function checkApiKey(req, res, next) {
+    const apiKey = req.header('x-api-key');
+    if (!apiKey || apiKey !== process.env.API_KEY) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid or missing API key' });
+    }
+    next();
+}
+
+// Apply API key middleware to all routes below
+app.use(checkApiKey);
+
+// Remove the duplicate unprotected /customers endpoint
+
 // Get all customers
 app.get("/customers", async (req, res) => {
     const [cust, err] = await da.getCustomers();
@@ -17,7 +32,6 @@ app.get("/customers", async (req, res) => {
         res.status(500).json({ error: err });
     }
 });
-
 // Reset customers
 app.get("/reset", async (req, res) => {
     const [result, err] = await da.resetCustomers();
