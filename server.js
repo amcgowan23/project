@@ -1,21 +1,32 @@
 // server.js file
 const express = require('express');
+const bodyParser = require('body-parser');
 const path = require('path');
 const da = require("./data-access");
 const app = express();
 const port = process.env.PORT || 4000;
+const checkApiKey = require("./security").checkApiKey;
+const getNewApiKey = require("./security").getNewApiKey;
 
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+pp.use(bodyParser.json());
+
+// Set the static directory to serve files from
+const staticDir = path.join(__dirname, 'public');
+app.use(express.static(staticDir));
+
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+  console.log("staticDir: " + staticDir);
+});
 
 // API key middleware
-function checkApiKey(req, res, next) {
-    const apiKey = req.header('x-api-key');
-    if (!apiKey || apiKey !== process.env.API_KEY) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid or missing API key' });
-    }
-    next();
-}
+// function checkApiKey(req, res, next) {
+//     const apiKey = req.header('x-api-key');
+//     if (!apiKey || apiKey !== process.env.API_KEY) {
+//         return res.status(401).json({ error: 'Unauthorized: Invalid or missing API key' });
+//     }
+//     next();
+// }
 
 // /customers/find is open to all
 app.get("/customers/find", async (req, res) => {
@@ -51,7 +62,7 @@ app.get("/customers/find", async (req, res) => {
 });
 
 // Apply API key middleware to all routes below
-app.use(checkApiKey);
+// app.use(checkApiKey);
 
 // Get all customers
 app.get("/customers", async (req, res) => {
@@ -74,7 +85,7 @@ app.get("/reset", async (req, res) => {
 });
 
 // Add a new customer
-app.post('/customers', async (req, res) => {
+app.post('/customers',checkApiKey, async (req, res) => {
     const newCustomer = req.body;
     if (!newCustomer || Object.keys(newCustomer).length === 0) {
         return res.status(400).json({ error: "Missing request body" });
